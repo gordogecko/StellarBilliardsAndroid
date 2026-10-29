@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <!-- Viewport settings to completely disable pinch-to-zoom and double-tap zoom on mobile -->
+    <!-- Viewport settings optimized for Android smartphone displays (disables pinch/double-tap zoom) -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Stellar Billiards</title>
-    <!-- PWA Manifest & iOS Support -->
+    <!-- PWA Manifest & Mobile Support -->
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -35,13 +35,12 @@
             color: #fff;
             user-select: none;
             -webkit-user-select: none;
-            /* Critical for mobile: prevent browser gestures like pull-to-refresh */
+            /* Prevents default mobile browser gestures like pull-to-refresh */
             touch-action: none;
             overflow: hidden;
             position: fixed; 
         }
 
-        /* App Container spans the entire viewport without aspect-ratio limits */
         #app-container {
             position: absolute;
             top: 0;
@@ -73,7 +72,6 @@
             flex-direction: column;
             justify-content: space-between;
             box-sizing: border-box;
-            /* Dynamically add padding for modern smartphone edges */
             padding: env(safe-area-inset-top, 15px) 
                      env(safe-area-inset-right, 12px) 
                      max(20px, env(safe-area-inset-bottom)) 
@@ -118,7 +116,7 @@
 
         .title-panel h1 {
             margin: 0;
-            font-size: clamp(9px, 3vw, 11px); /* Responsive title font */
+            font-size: clamp(9px, 3vw, 11px);
             font-weight: 700;
             letter-spacing: 1px;
             color: var(--laser-cyan);
@@ -130,7 +128,7 @@
         }
 
         .stats-panel {
-            font-size: clamp(10px, 3.5vw, 12px); /* Responsive stats font */
+            font-size: clamp(10px, 3.5vw, 12px);
             letter-spacing: 1px;
             font-weight: 600;
             display: flex;
@@ -268,7 +266,6 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            /* Prevents double-tap zoom on iOS when spamming the button */
             touch-action: manipulation; 
         }
 
@@ -295,7 +292,7 @@
         }
 
         .power-track {
-            width: 20px; /* Slightly wider for easier thumb targeting */
+            width: 20px;
             height: 70px;
             background: rgba(3, 10, 24, 0.9);
             border: 2px solid var(--shield-purple);
@@ -325,7 +322,7 @@
             box-shadow: 0 0 10px var(--laser-cyan);
             border-radius: 3px;
             position: absolute;
-            left: -6px; /* Centered relative to new width */
+            left: -6px;
             bottom: 60%;
             transform: translateY(50%);
             pointer-events: none;
@@ -432,7 +429,6 @@
             box-shadow: 0 0 25px #ff4444;
         }
 
-        /* Screen Danger Alert */
         #alert-panel {
             position: absolute;
             top: 25%;
@@ -459,16 +455,15 @@
             display: none !important;
             opacity: 0;
         }
-
     </style>
 
-    <!-- LOCAL OFFLINE ES MODULE SHIMS & IMPORT MAP -->
-    <script async src="./es-module-shims.js"></script>
+    <!-- CDN ES MODULE SHIMS & IMPORT MAP -->
+    <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
     <script type="importmap">
         {
             "imports": {
-                "three": "./three.module.js",
-                "three/addons/": "./jsm/"
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
             }
         }
     </script>
@@ -580,7 +575,7 @@
         let shotsCount = 0;
         let playerScore = 0;
         let isGameOver = false;
-        let aimingHorizontal = 90; // perfectly aligned for a clean break down the X-axis
+        let aimingHorizontal = 90;
         let aimingVertical = 0;   
         let strikePower = 60;      
         let cueOffset = 0;         
@@ -593,23 +588,24 @@
         let cueAnchorDirection = new THREE.Vector3();
         let isCueLocked = false;
 
-        // FIXED: iOS & Android WebView Audio Initialization Handling with Fallback Try/Catch
         let audioCtx;
         let isAudioInitialized = false;
 
         function initAudioContext() {
             if (!isAudioInitialized) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                gain.gain.value = 0;
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.01);
-                
-                isAudioInitialized = true;
+                try {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    gain.gain.value = 0;
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.01);
+                    isAudioInitialized = true;
+                } catch (e) {
+                    console.warn("Web Audio API not supported or restricted:", e);
+                }
             }
             if (audioCtx && audioCtx.state === 'suspended') {
                 audioCtx.resume();
@@ -693,10 +689,10 @@
                     oscTone.stop(start + duration + 0.05);
                 };
                 
-                playTone(523.25, now, 0.35); // C5
-                playTone(659.25, now + 0.08, 0.35); // E5
-                playTone(783.99, now + 0.16, 0.35); // G5
-                playTone(1046.50, now + 0.24, 0.5); // C6
+                playTone(523.25, now, 0.35);
+                playTone(659.25, now + 0.08, 0.35);
+                playTone(783.99, now + 0.16, 0.35);
+                playTone(1046.50, now + 0.24, 0.5);
             }
         }
 
@@ -948,20 +944,15 @@
             return ball;
         }
 
-        // Align the cue ball to the traditional head spot
         const cueBall = createBall(cueBallTex, -8, 0, 0, true);
 
-        // 3D 15-ball Square Pyramid generation
-        const br = 0.81; // Tiny pad over ballRadius to prevent overlap logic jitter at spawn
-        const sx = 8;    // Apex positioned exactly at the foot spot
-        const ds = br * Math.sqrt(2); // Distance step for rotated 3D grid stacking
-        const bx = sx + 2 * br;       // Base X offset so it exactly touches the Leader ball
+        const br = 0.81;
+        const sx = 8;
+        const ds = br * Math.sqrt(2);
+        const bx = sx + 2 * br;
 
         const targetBallsData = [
-            // Leader Ball (Front apex)
             { num: 1, color: '#ffcc00', isStripe: false, pos: [sx, 0, 0] },
-            
-            // Layer 0 (Base 3x3 Grid, rotated 45 deg)
             { num: 2, color: '#0033cc', isStripe: false, pos: [bx, 0, 0] },
             { num: 3, color: '#cc0000', isStripe: false, pos: [bx + ds, 0, ds] },
             { num: 4, color: '#6600cc', isStripe: false, pos: [bx + ds, 0, -ds] },
@@ -971,14 +962,10 @@
             { num: 9, color: '#ffcc00', isStripe: true,  pos: [bx + 3*ds, 0, ds] },
             { num: 10, color: '#0033cc', isStripe: true, pos: [bx + 3*ds, 0, -ds] },
             { num: 11, color: '#cc0000', isStripe: true, pos: [bx + 4*ds, 0, 0] },
-
-            // Layer 1 (Middle 2x2 Grid)
             { num: 12, color: '#6600cc', isStripe: true, pos: [bx + ds, ds, 0] },
             { num: 13, color: '#ff6600', isStripe: true, pos: [bx + 2*ds, ds, ds] },
             { num: 14, color: '#006600', isStripe: true, pos: [bx + 2*ds, ds, -ds] },
             { num: 15, color: '#663300', isStripe: true, pos: [bx + 3*ds, ds, 0] },
-
-            // Layer 2 (Top Apex)
             { num: 8, color: '#111111', isStripe: false, pos: [bx + 2*ds, 2*ds, 0] }
         ];
 
@@ -1137,7 +1124,7 @@
             else if (p.y - r < -hh) { p.y = -hh + r; v.y *= -railElasticity; hit = true; }
 
             if (p.z + r > hd) { p.z = hd - r; v.z *= -railElasticity; hit = true; }
-            else if (p.z - r < -hd) { p.z = -hd + r; v.z *= -hd + r; v.z *= -railElasticity; hit = true; }
+            else if (p.z - r < -hd) { p.z = -hd + r; v.z *= -railElasticity; hit = true; }
 
             if (hit && v.length() > 0.05) {
                 playSciFiSound('thud');
@@ -1477,26 +1464,19 @@
             powerHandle.style.bottom = `${pPct}%`;
         }
 
-        // INITIALIZE AUDIO ON DIRECT INTERACTION (SAFEGUARDED WITH TRY/CATCH)
+        // INITIALIZE AUDIO ON DIRECT INTERACTION
         const startBtn = document.getElementById('start-game-btn');
         const handleStartGame = (e) => {
-            if(e && e.cancelable) e.preventDefault();
-            try {
-                initAudioContext();
-            } catch (err) {
-                console.warn("Audio Context initialization warning:", err);
-            }
-            const welcomeOverlay = document.getElementById('welcome-overlay');
-            if (welcomeOverlay) {
-                welcomeOverlay.classList.add('hidden');
-            }
+            if(e && e.type === 'touchstart') e.preventDefault();
+            initAudioContext();
+            document.getElementById('welcome-overlay').classList.add('hidden');
         };
         startBtn.addEventListener('click', handleStartGame);
         startBtn.addEventListener('touchstart', handleStartGame, { passive: false });
 
         const strikeBtn = document.getElementById('strike-btn');
         const handleStrike = (e) => {
-            if(e && e.cancelable) e.preventDefault();
+            if(e && e.type === 'touchstart') e.preventDefault();
             triggerStrike();
         };
         strikeBtn.addEventListener('click', handleStrike);
